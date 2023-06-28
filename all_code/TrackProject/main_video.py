@@ -23,13 +23,13 @@ seg_model.modelinit()
 seg_model.modelwarmup()
 
 
-# videopath = r"/root/project/Datas/otherDatas/TEST_INPUT/1-2-1.mp4"
+videopath = r"/root/project/Datas/otherDatas/TEST_INPUT/1-2-1.mp4"
 # videopath = r"/root/project/Datas/otherDatas/TEST_INPUT/1-2-2.mp4"
 # videopath = r"/root/project/Datas/otherDatas/TEST_INPUT/1-2-3.mp4"
 # videopath = r"/root/project/Datas/otherDatas/TEST_INPUT/1-2-4.mp4"
-videopath = r"/root/project/Datas/otherDatas/TEST_INPUT/NIGHT-1.mp4"
-videopath = r"/root/project/Datas/otherDatas/TEST_INPUT/NIGHT-2.mp4"
-videopath = r"/root/project/Datas/otherDatas/TEST_INPUT/RAIN.mp4"
+# videopath = r"/root/project/Datas/otherDatas/TEST_INPUT/NIGHT-1.mp4"
+# videopath = r"/root/project/Datas/otherDatas/TEST_INPUT/NIGHT-2.mp4"
+# videopath = r"/root/project/Datas/otherDatas/TEST_INPUT/RAIN.mp4"
 cap = cv2.VideoCapture(videopath)
 w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -90,13 +90,13 @@ while True:
         
     
     cv2.putText(image, "FPS={:.2f}".format(FPS), (w_-300, 100), 1, 2, (255,255,255), 2)
-    # predict[:,:,0][predict[:,:,0]==1] = 0
-    # predict[:,:,1][predict[:,:,1]==1] = 255
-    # predict[:,:,2][predict[:,:,2]==1] = 0
-    # # # 添加透明显示
-    # alpha = 0.4
-    # beta = 0.8
-    # image = cv2.addWeighted(predict, alpha, image , beta, 0)
+    predict[:,:,0][predict[:,:,0]==1] = 0
+    predict[:,:,1][predict[:,:,1]==1] = 255
+    predict[:,:,2][predict[:,:,2]==1] = 0
+    # # 添加透明显示
+    alpha = 0.4
+    beta = 0.8
+    image = cv2.addWeighted(predict, alpha, image , beta, 0)
     cv2.imwrite("haha.jpg", image)
     vid_writer.write(image)
     print("now status: {}".format(status))  
