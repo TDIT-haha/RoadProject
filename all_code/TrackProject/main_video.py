@@ -39,6 +39,7 @@ save_path = "results/videos/predict_{}".format(os.path.basename(videopath))
 vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
 
 setdraw = False
+thr = 0.5 # 这是交集的阈值
 while True:
     ret, image = cap.read()
     if not ret:
@@ -61,6 +62,7 @@ while True:
     predict = cv2.resize(predict,(w_,h_))
     
     dets = detect_model.inter(image)
+    collect_intersection = []
     if len(dets)>0:
         image01 = image.copy()*0
         for det_, conf_, name_ in dets:
@@ -68,9 +70,18 @@ while True:
             # if setdraw:
             cv2.putText(image, "Anomalies", (int(x1), int(y1)), 1, 1, (255, 255, 255), 2)
             cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), color=(0,255,0))
-            cv2.rectangle(image01, (int(x1), int(y1)), (int(x2), int(y2)), color=(1,1,1), thickness=-1)
+            cv2.rectangle(image01, (int(x1), int(y1)), (int(x2), int(y2)), color=(1,1,1), thickness=-1) #这个可不能注释掉
             
-        intersection = np.logical_and(image01,predict)
+            newmask = image01*predict
+            intersection_area = np.sum(newmask[:,:,0])
+            total_area = (x2-x1)*(y2-y1)
+            intersection_rate = intersection_area/total_area.cpu().numpy()
+            collect_intersection.append(intersection_rate)
+            
+        # intersection = np.logical_and(image01,predict)
+        collect_intersection = np.array(collect_intersection)
+        intersection = collect_intersection>thr # 判断是否有存在大于阈值的bbox
+        
         if intersection.any():
             status = "Intrude"
         else:
@@ -101,7 +112,7 @@ while True:
     vid_writer.write(image)
     print("now status: {}".format(status))  
     print("FPS={:.2f}".format(FPS))
-
+    # exit()
 
 
 

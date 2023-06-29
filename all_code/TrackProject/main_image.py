@@ -23,6 +23,7 @@ seg_model.modelinit()
 seg_model.modelwarmup()
 
 setdraw = False
+thr = 0.5 # 这是交集的阈值
 imagefolder = r"/root/project/Modules/TrackAnomalyTask/all_code/TrackProject/test/yolo"
 for pathi in os.listdir(imagefolder):
     imagepath = os.path.join(imagefolder, pathi)
@@ -47,19 +48,28 @@ for pathi in os.listdir(imagefolder):
 
 
     dets = detect_model.inter(image)
+    collect_intersection = []
     if len(dets)>0:
-        image01 = image.copy()*0
         for det_, conf_, name_ in dets:
+            image01 = image.copy()*0
             x1,y1,x2,y2 = det_
             # if setdraw:
             cv2.putText(image, "Anomalies", (int(x1), int(y1)), 1, 1, (255, 255, 255), 2)
             cv2.rectangle(image, (int(x1), int(y1)), (int(x2), int(y2)), color=(0,255,0))
-            cv2.rectangle(image01, (int(x1), int(y1)), (int(x2), int(y2)), color=(1,1,1), thickness=-1)
             
-        # print(np.unique(image01))
+            cv2.rectangle(image01, (int(x1), int(y1)), (int(x2), int(y2)), color=(1,1,1), thickness=-1) #这个可不能注释掉
+            
+            newmask = image01*predict
+            intersection_area = np.sum(newmask[:,:,0])
+            total_area = (x2-x1)*(y2-y1)
+            intersection_rate = intersection_area/total_area.cpu().numpy()
+            collect_intersection.append(intersection_rate)
 
-        intersection = np.logical_and(image01,predict)
-        if intersection.any():
+        # intersection = np.logical_and(image01,predict)
+        collect_intersection = np.array(collect_intersection)
+        intersection = collect_intersection>thr # 判断是否有存在大于阈值的bbox
+        
+        if intersection.any(): #只要是有一个，都是status = "Intrude"
             status = "Intrude"
         else:
             status = "Alarm"
@@ -76,16 +86,16 @@ for pathi in os.listdir(imagefolder):
         
     # cv2.putText(image, "{}".format(status), (100, 100), 1, 5, status_color, 2)
     # cv2.putText(image, "FPS={:.2f}".format(FPS), (w_-500, 100), 1, 5, (255,255,255), 2)
-    # predict[:,:,0][predict[:,:,0]==1] = 0
-    # predict[:,:,1][predict[:,:,1]==1] = 255
-    # predict[:,:,2][predict[:,:,2]==1] = 0
-    # # # 添加透明显示
-    # alpha = 0.4
-    # beta = 0.8
-    # image = cv2.addWeighted(predict, alpha, image , beta, 0)
+    predict[:,:,0][predict[:,:,0]==1] = 0
+    predict[:,:,1][predict[:,:,1]==1] = 255
+    predict[:,:,2][predict[:,:,2]==1] = 0
+    # # 添加透明显示
+    alpha = 0.4
+    beta = 0.8
+    image = cv2.addWeighted(predict, alpha, image , beta, 0)
     cv2.imwrite(os.path.join(r"./results/images","draw_{}".format(pathi)), image)
     print("now status: {}".format(status))  
-
+    exit()
 
 
 
